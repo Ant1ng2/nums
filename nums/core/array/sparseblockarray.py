@@ -110,6 +110,31 @@ class SparseBlockArray(BlockArray):
             rarr.blocks[grid_entry].dtype = getattr(np, dtype_str)
         return rarr
 
+    @classmethod
+    def from_blocks(cls, arr: np.ndarray, result_shape, system):
+        sample_idx = tuple(0 for dim in arr.shape)
+        if isinstance(arr, SparseBlock):
+            sample_block = arr
+            result_shape = ()
+        else:
+            sample_block = arr[sample_idx]
+            if result_shape is None:
+                result_shape = array_utils.shape_from_block_array(arr)
+        result_block_shape = sample_block.shape
+        result_dtype_str = sample_block.dtype.__name__
+        result_grid = ArrayGrid(shape=result_shape,
+                                block_shape=result_block_shape,
+                                dtype=result_dtype_str)
+        assert arr.shape == result_grid.grid_shape
+        result = SparseBlockArray(result_grid, system)
+        for grid_entry in result_grid.get_entry_iterator():
+            if isinstance(arr, SparseBlock):
+                block: SparseBlock = arr
+            else:
+                block: SparseBlock = arr[grid_entry]
+            result.blocks[grid_entry] = block
+        return result
+
     def touch(self):
         oids = []
         for grid_entry in self.grid.get_entry_iterator():
