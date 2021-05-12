@@ -56,8 +56,8 @@ class NumsRandomState(object):
     def normal(self, loc=0.0, scale=1.0, shape=None, block_shape=None, dtype=None):
         return self._sample_basic("normal", shape, block_shape, dtype, (loc, scale))
 
-    def normal_sparse(self, density, shape=None, block_shape=None, dtype=None):
-        return self._sample_basic_sparse(density, shape, block_shape, dtype)
+    def normal_sparse(self, density, format, shape=None, block_shape=None, dtype=None):
+        return self._sample_basic_sparse(density, format, shape, block_shape, dtype)
 
     def beta(self, a, b, shape=None, block_shape=None, dtype=None):
         return self._sample_basic("beta", shape, block_shape, dtype, (a, b))
@@ -182,7 +182,7 @@ class NumsRandomState(object):
                                                   })
         return ba
 
-    def _sample_basic_sparse(self, density, shape, block_shape, dtype) -> BlockArray:
+    def _sample_basic_sparse(self, density, format, shape, block_shape, dtype) -> BlockArray:
         if shape is None:
             assert block_shape is None
             shape = ()
@@ -202,6 +202,7 @@ class NumsRandomState(object):
                                                     m, 
                                                     n, 
                                                     density,
+                                                    format,
                                                     dtype,
                                                     syskwargs={
                                                         "grid_entry": grid_entry,

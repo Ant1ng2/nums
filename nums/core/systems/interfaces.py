@@ -88,7 +88,7 @@ class ComputeInterface(object):
     def random_block(self, rng_params, rfunc_name, rfunc_args, shape, dtype, syskwargs: Dict):
         raise NotImplementedError()
 
-    def random_block_sparse(self, m, n, density, dtype, syskwargs: Dict):
+    def random_block_sparse(self, m, n, density, format, dtype, syskwargs: Dict):
         raise NotImplementedError()
 
     def permutation(self, rng_params, size, syskwargs: Dict):
@@ -107,6 +107,12 @@ class ComputeInterface(object):
         raise NotImplementedError()
 
     def swapaxes(self, arr, axis1, axis2, syskwargs: Dict):
+        raise NotImplementedError()
+
+    def csr(self, arr, syskwargs: Dict):
+        raise NotImplementedError()
+
+    def csc(self, arr, syskwargs: Dict):
         raise NotImplementedError()
 
     def create_block(self, *src_arrs, src_params, dst_params, dst_shape, dst_shape_bc,

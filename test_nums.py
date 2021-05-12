@@ -11,13 +11,13 @@ def routine(x1, x2):
 
 def run():
     print("running nums operation")
-    size = 4
+    size = 5000
     density = 0.25
 
     # Memory used is 8 * (10**4)**2
     # So this will be 800MB object.
-    x1 = nps.random.randn_sparse(size, size, density)
-    x2 = nps.random.randn_sparse(size, size, density)
+    x1 = nps.random.randn_sparse(size, size, density, 'csr')
+    x2 = nps.random.randn_sparse(size, size, density, 'csc')
 
     start = time.time()
     routine(x1, x2)

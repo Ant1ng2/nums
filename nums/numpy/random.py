@@ -61,9 +61,9 @@ class RandomState(object):
         shape, block_shape = self._get_shapes(shape, _np.float64)
         return self.rs().normal(shape=shape, block_shape=block_shape)
 
-    def randn_sparse(self, m, n, density = 0.1):
+    def randn_sparse(self, m, n, density = 0.1, format='coo'):
         shape, block_shape = self._get_shapes((m, n), _np.float64)
-        return self.rs().normal_sparse(density=density, shape=shape, block_shape=block_shape)
+        return self.rs().normal_sparse(density=density, format=format, shape=shape, block_shape=block_shape)
 
     def randint(self, low, high=None, size=None, dtype=None):
         if high is None:

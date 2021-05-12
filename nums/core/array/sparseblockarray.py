@@ -163,3 +163,26 @@ class SparseBlockArray(BlockArray):
                         result_block += dotted_block
                 result.blocks[grid_entry] = result_block
         return result
+
+    def csr(self):
+        meta_swap = self.grid.to_meta()
+        grid_swap = ArrayGrid.from_meta(meta_swap)
+        rarr_src = np.ndarray(self.blocks.shape, dtype='O')
+
+        for grid_entry in self.grid.get_entry_iterator():
+            rarr_src[grid_entry] = self.blocks[grid_entry].csr()
+        
+        rarr_swap = SparseBlockArray(grid_swap, self.system, rarr_src)
+        return rarr_swap
+
+    def csc(self):
+        meta_swap = self.grid.to_meta()
+        grid_swap = ArrayGrid.from_meta(meta_swap)
+        rarr_src = np.ndarray(self.blocks.shape, dtype='O')
+
+        for grid_entry in self.grid.get_entry_iterator():
+            rarr_src[grid_entry] = self.blocks[grid_entry].csc()
+        
+        rarr_swap = SparseBlockArray(grid_swap, self.system, rarr_src)
+        return rarr_swap
+       

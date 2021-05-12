@@ -113,8 +113,8 @@ class ComputeCls(ComputeImp):
             result = result.astype(dtype)
         return result
 
-    def random_block_sparse(self, m, n, density, dtype):
-        return scipy.sparse.random(m, n, density=density, dtype=dtype)
+    def random_block_sparse(self, m, n, density, format, dtype):
+        return scipy.sparse.random(m, n, density=density, format=format, dtype=dtype)
 
     def permutation(self, rng_params, size):
         rng: Generator = block_rng(*rng_params)
@@ -221,6 +221,12 @@ class ComputeCls(ComputeImp):
 
     def swapaxes(self, arr, axis1, axis2):
         return arr.swapaxes(axis1, axis2)
+
+    def csr(self, arr):
+        return arr.tocsr()
+
+    def csc(self, arr):
+        return arr.tocsc()
 
     def split(self, arr, indices_or_sections, axis, transposed):
         if transposed:

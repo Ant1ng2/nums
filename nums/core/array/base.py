@@ -449,9 +449,33 @@ class SparseBlock(Block):
             block_id_counter += 1
             self.id = block_id_counter
 
+    def copy(self, shallow=True):
+        assert shallow, "Only shallow copies are currently supported."
+        block = SparseBlock(self.grid_entry, self.grid_shape, self.rect, self.shape,
+                      self.dtype, self.transposed, self._system)
+        block.oid = self.oid
+        return block
+
     def tensordot(self, other, axes):
         return self.bop("sparse_tensordot", other, args={"axes": axes})
 
     def __matmul__(self, other):
         return self.tensordot(other, axes=1)
 
+    def csr(self):
+        block = self.copy()
+        block.oid = self._system.csr(block.oid,
+                                         syskwargs={
+                                             "grid_entry": block.grid_entry,
+                                             "grid_shape": block.grid_shape
+                                         })
+        return block
+
+    def csc(self):
+        block = self.copy()
+        block.oid = self._system.csc(block.oid,
+                                         syskwargs={
+                                             "grid_entry": block.grid_entry,
+                                             "grid_shape": block.grid_shape
+                                         })
+        return block
