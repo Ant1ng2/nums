@@ -432,23 +432,6 @@ class BlockArrayBase(object):
 
 class SparseBlock(Block):
 
-    def __init__(self, grid_entry, grid_shape, rect, shape, dtype, transposed, system: System,
-                 id=None):
-        self._system = system
-        self.grid_entry: tuple = grid_entry
-        self.grid_shape: tuple = grid_shape
-        self.rect: list = rect
-        self.oid: np.object = None
-        self.shape: tuple = shape
-        self.dtype = dtype
-        self.num_dims = len(self.rect)
-        self.transposed = transposed
-        self.id = id
-        if self.id is None:
-            global block_id_counter
-            block_id_counter += 1
-            self.id = block_id_counter
-
     def tensordot(self, other, axes):
         return self.bop("sparse_tensordot", other, args={"axes": axes})
 
