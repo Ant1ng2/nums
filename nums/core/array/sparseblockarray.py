@@ -20,11 +20,52 @@ import scipy
 
 from nums.core.storage.storage import ArrayGrid
 from nums.core.array import utils as array_utils
+from nums.core.systems.systems import System
 from nums.core.array.blockarray import BlockArray
-from nums.core.array.base import SparseBlockArrayBase
+from nums.core.array.base import SparseBlock
 
 
-class SparseBlockArray(SparseBlockArrayBase):
+class SparseBlockArray(BlockArray):
+
+    def __init__(self, grid: ArrayGrid, system: System, blocks: np.ndarray = None):
+        self.grid = grid
+        self.system = system
+        self.shape = self.grid.shape
+        self.block_shape = self.grid.block_shape
+        self.size = np.product(self.shape)
+        self.ndim = len(self.shape)
+        self.dtype = self.grid.dtype
+        self.blocks = blocks
+        if self.blocks is None:
+            # TODO (hme): Subclass np.ndarray for self.blocks instances,
+            #  and override key methods to better integrate with NumPy's ufuncs.
+            self.blocks = np.empty(shape=self.grid.grid_shape, dtype=SparseBlock)
+            for grid_entry in self.grid.get_entry_iterator():
+                self.blocks[grid_entry] = SparseBlock(grid_entry=grid_entry,
+                                                grid_shape=self.grid.grid_shape,
+                                                rect=self.grid.get_slice_tuples(grid_entry),
+                                                shape=self.grid.get_block_shape(grid_entry),
+                                                dtype=self.dtype,
+                                                transposed=False,
+                                                system=self.system)
+    def get(self) -> np.ndarray:
+        result: np.ndarray = np.zeros(shape=self.grid.shape, dtype=self.grid.dtype)
+        block_shape: np.ndarray = np.array(self.grid.block_shape, dtype=np.int)
+        arrays: list = self.system.get([self.blocks[grid_entry].oid
+                                        for grid_entry in self.grid.get_entry_iterator()])
+        for block_index, grid_entry in enumerate(self.grid.get_entry_iterator()):
+            start = block_shape * grid_entry
+            entry_shape = np.array(self.grid.get_block_shape(grid_entry), dtype=np.int)
+            end = start + entry_shape
+            slices = tuple(map(lambda item: slice(*item), zip(*(start, end))))
+            block = self.blocks[grid_entry]
+            arr = arrays[block_index]
+            if block.transposed:
+                arr = arr.T
+            
+            result[slices] = arr.A
+
+        return result
 
     def find(self, app) -> np.ndarray:
         rows, cols, vals = [], [], []
