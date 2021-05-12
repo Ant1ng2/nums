@@ -216,7 +216,7 @@ class Block(object):
     def bop(self, op, other, args: dict, options=None):
         if not isinstance(other, Block):
             other = self._block_from_other(other)
-        if op == "tensordot":
+        if op == "tensordot" or op == "sparse_tensordot":
             axes = args["axes"]
             result_grid_entry = tuple(list(self.grid_entry[:-axes]) + list(other.grid_entry[axes:]))
             result_grid_shape = tuple(list(self.grid_shape[:-axes]) + list(other.grid_shape[axes:]))
@@ -428,4 +428,73 @@ class BlockArrayBase(object):
             # never really has writebackifcopy semantics
             broadcast = it.itviews[0]
         result.blocks = broadcast
+        return result
+
+class SparseBlock(Block):
+
+    def __init__(self, grid_entry, grid_shape, rect, shape, dtype, transposed, system: System,
+                 id=None):
+        self._system = system
+        self.grid_entry: tuple = grid_entry
+        self.grid_shape: tuple = grid_shape
+        self.rect: list = rect
+        self.oid: np.object = None
+        self.shape: tuple = shape
+        self.dtype = dtype
+        self.num_dims = len(self.rect)
+        self.transposed = transposed
+        self.id = id
+        if self.id is None:
+            global block_id_counter
+            block_id_counter += 1
+            self.id = block_id_counter
+
+    def tensordot(self, other, axes):
+        return self.bop("sparse_tensordot", other, args={"axes": axes})
+
+    def __matmul__(self, other):
+        return self.tensordot(other, axes=1)
+
+
+
+class SparseBlockArrayBase(BlockArrayBase):
+    
+    def __init__(self, grid: ArrayGrid, system: System, blocks: np.ndarray = None):
+        self.grid = grid
+        self.system = system
+        self.shape = self.grid.shape
+        self.block_shape = self.grid.block_shape
+        self.size = np.product(self.shape)
+        self.ndim = len(self.shape)
+        self.dtype = self.grid.dtype
+        self.blocks = blocks
+        if self.blocks is None:
+            # TODO (hme): Subclass np.ndarray for self.blocks instances,
+            #  and override key methods to better integrate with NumPy's ufuncs.
+            self.blocks = np.empty(shape=self.grid.grid_shape, dtype=Block)
+            for grid_entry in self.grid.get_entry_iterator():
+                self.blocks[grid_entry] = SparseBlock(grid_entry=grid_entry,
+                                                grid_shape=self.grid.grid_shape,
+                                                rect=self.grid.get_slice_tuples(grid_entry),
+                                                shape=self.grid.get_block_shape(grid_entry),
+                                                dtype=self.dtype,
+                                                transposed=False,
+                                                system=self.system)
+    def get(self) -> np.ndarray:
+        result: np.ndarray = np.zeros(shape=self.grid.shape, dtype=self.grid.dtype)
+        block_shape: np.ndarray = np.array(self.grid.block_shape, dtype=np.int)
+        arrays: list = self.system.get([self.blocks[grid_entry].oid
+                                        for grid_entry in self.grid.get_entry_iterator()])
+        for block_index, grid_entry in enumerate(self.grid.get_entry_iterator()):
+            start = block_shape * grid_entry
+            entry_shape = np.array(self.grid.get_block_shape(grid_entry), dtype=np.int)
+            end = start + entry_shape
+            slices = tuple(map(lambda item: slice(*item), zip(*(start, end))))
+            block = self.blocks[grid_entry]
+            arr = arrays[block_index]
+            if block.transposed:
+                arr = arr.T
+            
+            result[slices] = arr.A
+
         return result

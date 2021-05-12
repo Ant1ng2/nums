@@ -20,6 +20,7 @@ from numpy.random import PCG64
 from numpy.random import Generator
 import scipy.linalg
 import scipy.special
+import scipy.sparse
 
 from nums.core.storage.storage import ArrayGrid
 from nums.core.systems.interfaces import ComputeImp, RNGInterface
@@ -111,6 +112,9 @@ class ComputeCls(ComputeImp):
             # Only random and integer supports sampling of a specific type.
             result = result.astype(dtype)
         return result
+
+    def random_block_sparse(self, m, n, density, dtype):
+        return scipy.sparse.random(m, n, density=density, dtype=dtype)
 
     def permutation(self, rng_params, size):
         rng: Generator = block_rng(*rng_params)
@@ -233,6 +237,8 @@ class ComputeCls(ComputeImp):
         if a2.shape != a2_shape:
             a2 = a2.reshape(a2_shape)
 
+        if op == "sparse_tensordot":
+            return a1 * a2
         if op == "tensordot":
             return np.tensordot(a1, a2, axes=axes)
         op = np_ufunc_map.get(op, op)

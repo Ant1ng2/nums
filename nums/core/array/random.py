@@ -16,6 +16,7 @@
 
 import numpy as np
 
+from nums.core.array.sparseblockarray import SparseBlockArray
 from nums.core.array.blockarray import BlockArray, Block
 from nums.core.storage.storage import ArrayGrid
 from nums.core.systems.systems import System
@@ -54,6 +55,9 @@ class NumsRandomState(object):
 
     def normal(self, loc=0.0, scale=1.0, shape=None, block_shape=None, dtype=None):
         return self._sample_basic("normal", shape, block_shape, dtype, (loc, scale))
+
+    def normal_sparse(self, density, shape=None, block_shape=None, dtype=None):
+        return self._sample_basic_sparse(density, shape, block_shape, dtype)
 
     def beta(self, a, b, shape=None, block_shape=None, dtype=None):
         return self._sample_basic("beta", shape, block_shape, dtype, (a, b))
@@ -176,6 +180,33 @@ class NumsRandomState(object):
                                                       "grid_entry": grid_entry,
                                                       "grid_shape": grid.grid_shape
                                                   })
+        return ba
+
+    def _sample_basic_sparse(self, density, shape, block_shape, dtype) -> BlockArray:
+        if shape is None:
+            assert block_shape is None
+            shape = ()
+            block_shape = ()
+        else:
+            assert block_shape is not None
+        if dtype is None:
+            dtype = np.float64
+        assert isinstance(dtype, type)
+        grid: ArrayGrid = ArrayGrid(shape, block_shape, dtype=dtype.__name__)
+        ba: SparseBlockArray = SparseBlockArray(grid, self._system)
+        for grid_entry in ba.grid.get_entry_iterator():
+            # Size and dtype to begin with.
+            m, n = grid.get_block_shape(grid_entry)
+            block = ba.blocks[grid_entry]
+            block.oid = self._system.random_block_sparse(
+                                                    m, 
+                                                    n, 
+                                                    density,
+                                                    dtype,
+                                                    syskwargs={
+                                                        "grid_entry": grid_entry,
+                                                        "grid_shape": grid.grid_shape
+                                                    })
         return ba
 
     def permutation(self, size, block_size):
