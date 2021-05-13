@@ -5,14 +5,10 @@ import ray
 import nums.numpy as nps
 from nums.core import settings
 
-def routine(x1, x2):
-    result = x1 @ x2
-    print(result.touch())
-
 def run():
     print("running nums operation")
-    size = 5000
-    density = 0.25
+    size = 25000
+    density = 0.1
 
     # Memory used is 8 * (10**4)**2
     # So this will be 800MB object.
@@ -20,7 +16,10 @@ def run():
     x2 = nps.random.randn_sparse(size, size, density, 'csc')
 
     start = time.time()
-    routine(x1, x2)
+
+    result = x1 @ x2
+    print(result.touch())
+
     end = time.time()
 
     print("--- %s seconds ---" % (end - start))
@@ -33,17 +32,14 @@ if __name__ == "__main__":
     parser.add_argument('--cluster-shape', default="1,1")
     args = parser.parse_args()
 
-    if args.local:
-        ray.init()
-    else:
-        settings.use_head = args.use_head
-        settings.cluster_shape = tuple(map(lambda x: int(x), args.cluster_shape.split(",")))
-        print("use_head", args.use_head)
-        print("cluster_shape", args.cluster_shape)
-        print("connecting to head node", args.address)
-        ray.init(**{
-            "address": args.address
-        })
+    settings.use_head = False
+    settings.cluster_shape = tuple(map(lambda x: int(x), args.cluster_shape.split(",")))
+    print("use_head", False)
+    print("cluster_shape", args.cluster_shape)
+    print("connecting to head node", args.address)
+    ray.init(**{
+        "address": args.address
+    })
 
     run()
 
